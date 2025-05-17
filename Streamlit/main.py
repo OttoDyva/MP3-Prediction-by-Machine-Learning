@@ -154,9 +154,11 @@ else:
             import sklearn.metrics as sm
             from sklearn.metrics import r2_score
 
-            st.write("### Data Preprocessing and Encoding")
-            df = pd.read_csv("Cleaned-HR-Employee-Attrition.csv")
-            df['Attrition'] = df['Attrition'].map({'Yes': 1, 'No': 0})
+            if "cleaned_df" not in st.session_state:
+                st.error("Please run Data wrangling first to generate the cleaned dataset.")
+            else:
+                df = st.session_state["cleaned_df"].copy()
+                df['Attrition'] = df['Attrition'].map({'Yes': 1, 'No': 0})
 
             data_column_category = df.select_dtypes(exclude=[np.number]).columns
             st.write("Categorical Columns:", list(data_column_category))
@@ -385,7 +387,6 @@ else:
 
                     Overall, while the model is accurate for predicting retention, it is less effective at detecting attrition. Improving the model’s ability to identify employees at risk of leaving—perhaps by addressing class imbalance or tuning model parameters—could make it more useful for attrition prediction tasks.""")
 
-
         elif stage == "Clustering":
             if "cleaned_df" not in st.session_state:
                 st.error("Please run Data wrangling first to generate the cleaned dataset.")
@@ -456,11 +457,19 @@ else:
                 plt.tight_layout()
                 st.pyplot(fig2)
 
+                st.write("""
+                The scatterplot above uses PCA (Principal Component Analysis) to project high-dimensional employee data 
+                down to two dimensions, allowing us to visualize the clusters more intuitively. 
+                Each point is an employee, and each color represents the cluster they belong to. 
+                While there is some overlap between clusters (indicating similarities), 
+                you can still observe distinct groupings. This tells us that the KMeans model found 
+                real patterns in employee characteristics, such as tenure, income, and job level.
+                """)
+
                 st.write("### Cluster Profiles (Mean Values by Cluster)")
 
                 cluster_profile = df.groupby('Cluster').mean(numeric_only=True).T
 
-                import matplotlib.pyplot as plt
                 fig3, ax3 = plt.subplots(figsize=(14, 10))
                 sns.heatmap(cluster_profile, annot=True, fmt=".1f", cmap="YlGnBu", linewidths=0.5, ax=ax3)
                 ax3.set_title("Cluster Profiles by Feature (Mean Values)")
@@ -468,4 +477,23 @@ else:
                 ax3.set_ylabel("Feature")
                 plt.tight_layout()
                 st.pyplot(fig3)
+
+                st.write("""
+                This heatmap shows the average value of each numeric feature for every cluster. 
+                It helps us interpret what differentiates the groups.
+
+                - **Cluster 0, (left hand side) ** tends to include employees with **higher MonthlyIncome**, **more TotalWorkingYears**, 
+                and **higher JobLevel**. This suggests these are more **experienced or senior staff**.
+                - **Cluster 1, (right side)**, on the other hand, has **younger employees**, with **lower income**, and **less tenure** — 
+                likely **junior or newer hires**.
+
+                Interestingly, features like **JobSatisfaction**, **WorkLifeBalance**, and **EnvironmentSatisfaction** 
+                remain fairly consistent between clusters, indicating that the work environment is perceived similarly 
+                regardless of seniority. This could be a good sign for organizational culture, and indicating a general job satisfaction
+                at the company across the board.
+
+                Overall, this clustering can help HR or business leaders tailor programs:
+                - Cluster 0 might be suitable for leadership or mentoring roles.
+                - Cluster 1 could benefit from more support, training, or engagement initiatives to at the very least improve retention.
+                """)
 
